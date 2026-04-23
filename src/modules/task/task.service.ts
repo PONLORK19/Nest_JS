@@ -1,39 +1,49 @@
 import { Injectable } from '@nestjs/common';
+import { Task } from './task.entity';
+import { Repository } from 'typeorm/repository/Repository';
+import { User } from '../users/user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class TaskService {
-  getTask(id: string) {
-    console.log(id);
-    return {
-      name: 'Task 1',
-      description: 'Description of Task 1',
-      createdAt: new Date().toISOString(),
-      completedAt: null,
-      userId: 1,
-    };
+  constructor(
+    @InjectRepository(Task)
+    private tasksRepo: Repository<Task>,
+
+    @InjectRepository(User)
+    private usersRepo: Repository<User>, // bcuz every task belongs to a user
+  ) {}
+
+  async create(taskData: Partial<Task>, userId: number) {
+    const user = await this.usersRepo.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const task = this.tasksRepo.create({
+      ...taskData,
+      user,
+    });
+    return this.tasksRepo.save(task); // find user -> create task -> attach user -> save Db
   }
-  createTask(body: any) {
-    console.log(body);
-    return {
-      name: 'Task 1',
-      description: 'Description of Task 1',
-      createdAt: new Date().toISOString(),
-      completedAt: null,
-      userId: 1,
-    };
+
+  findAll() {
+    return this.tasksRepo.find({
+      relations: ['user'],
+    });
   }
-  updateTask(id: string, body: any) {
-    console.log(body);
-    return {
-      name: 'Task 1',
-      description: 'Description of Task 1',
-      createdAt: new Date().toISOString(),
-      completedAt: null,
-      userId: 1,
-    };
+  findOne(id: number) {
+    return this.tasksRepo.findOne({
+      where: { id },
+      relations: ['user'],
+    });
   }
-  deleteTask(id: string) {
-    console.log(id);
-    return { message: 'success' };
+  async update(id: number, updateData: Partial<Task>) {
+    await this.tasksRepo.update(id, updateData);
+    return this.findOne(id);
+  }
+  remove(id: number) {
+    return this.tasksRepo.delete(id);
   }
 }
