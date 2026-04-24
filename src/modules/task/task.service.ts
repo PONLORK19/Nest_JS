@@ -10,8 +10,9 @@ export class TaskService {
     @InjectRepository(Task)
     private tasksRepo: Repository<Task>,
 
-    @InjectRepository(User)
+    @InjectRepository(User) // Inject (give me) the repository for this entity
     private usersRepo: Repository<User>, // bcuz every task belongs to a user
+    // we need to access the user repository to find the user when creating a task
   ) {}
 
   async create(taskData: Partial<Task>, userId: number) {
